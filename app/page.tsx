@@ -139,7 +139,7 @@ export default function Home() {
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="flex items-center gap-2 text-sm text-muted-foreground"
+                className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground"
               >
                 <Users className="w-4 h-4" />
                 <span>3 Expert Reviewers</span>
@@ -148,12 +148,12 @@ export default function Home() {
           </div>
         </header>
 
-        <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12">
           {/* Hero Section - Two column with chat preview */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="grid lg:grid-cols-2 gap-12 items-center mb-16"
+            className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center mb-8 sm:mb-16"
           >
             {/* Left - Text content */}
             <div className="text-left">
@@ -172,7 +172,7 @@ export default function Home() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
               >
-                <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
+                <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6 leading-tight">
                   <span className="text-foreground">Master the</span>
                   <br />
                   <span className="text-foreground">Product Sense</span>
@@ -196,29 +196,29 @@ export default function Home() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
-                className="flex items-center gap-6 text-sm"
+                className="flex flex-wrap items-center gap-3 sm:gap-6 text-sm"
               >
-                <div className="flex items-center gap-2">
-                  <Target className="w-5 h-5 text-coral" />
-                  <span className="text-foreground/80">Instant Feedback</span>
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <Target className="w-4 h-4 sm:w-5 sm:h-5 text-coral" />
+                  <span className="text-foreground/80 text-xs sm:text-sm">Instant Feedback</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-coral" />
-                  <span className="text-foreground/80">Score Breakdown</span>
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-coral" />
+                  <span className="text-foreground/80 text-xs sm:text-sm">Score Breakdown</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Award className="w-5 h-5 text-coral" />
-                  <span className="text-foreground/80">Expert Analysis</span>
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <Award className="w-4 h-4 sm:w-5 sm:h-5 text-coral" />
+                  <span className="text-foreground/80 text-xs sm:text-sm">Expert Analysis</span>
                 </div>
               </motion.div>
             </div>
 
-            {/* Right - Chat preview card */}
+            {/* Right - Chat preview card (hidden on mobile) */}
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2 }}
-              className="card-elevated rounded-2xl p-5 shadow-xl"
+              className="hidden lg:block card-elevated rounded-2xl p-5 shadow-xl"
             >
               {/* Window header */}
               <div className="flex items-center justify-between mb-4">
@@ -324,36 +324,36 @@ export default function Home() {
                   <div className="flex items-center gap-1 p-1 rounded-lg bg-muted">
                     <button
                       onClick={() => setInputMode('record')}
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                      className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
                         inputMode === 'record'
                           ? 'bg-foreground text-background shadow-sm'
                           : 'text-muted-foreground hover:text-foreground'
                       }`}
                     >
                       <Mic className="w-4 h-4" />
-                      Record
+                      <span className="hidden sm:inline">Record</span>
                     </button>
                     <button
                       onClick={() => setInputMode('guided')}
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                      className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
                         inputMode === 'guided'
                           ? 'bg-foreground text-background shadow-sm'
                           : 'text-muted-foreground hover:text-foreground'
                       }`}
                     >
                       <MessageCircle className="w-4 h-4" />
-                      Guided
+                      <span className="hidden sm:inline">Guided</span>
                     </button>
                     <button
                       onClick={() => setInputMode('type')}
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                      className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
                         inputMode === 'type'
                           ? 'bg-foreground text-background shadow-sm'
                           : 'text-muted-foreground hover:text-foreground'
                       }`}
                     >
                       <Keyboard className="w-4 h-4" />
-                      Type
+                      <span className="hidden sm:inline">Type</span>
                     </button>
                   </div>
                 </div>
@@ -883,24 +883,24 @@ function FinalVerdictCard({ decision, score, percentileData }: { decision: Final
             transition={{ delay: 0.5 }}
             className={`mt-6 pt-6 border-t ${dividerColor}`}
           >
-            <div className="flex items-center justify-center gap-6">
+            <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
               <div className="text-center">
                 <div className="flex items-center justify-center gap-1 mb-1">
-                  <Award className={`w-5 h-5 ${textMuted}`} />
-                  <span className={`text-2xl font-bold ${textColor}`}>Top {percentileData.percentile}%</span>
+                  <Award className={`w-4 h-4 sm:w-5 sm:h-5 ${textMuted}`} />
+                  <span className={`text-xl sm:text-2xl font-bold ${textColor}`}>Top {percentileData.percentile}%</span>
                 </div>
                 <p className={`text-xs ${textLight}`}>of all responses</p>
               </div>
-              <div className={`w-px h-10 ${dividerColor}`} />
+              <div className={`hidden sm:block w-px h-10 ${dividerColor}`} />
               <div className="text-center">
-                <p className={`text-lg font-bold ${textColor}`}>#{percentileData.rank}</p>
+                <p className={`text-base sm:text-lg font-bold ${textColor}`}>#{percentileData.rank}</p>
                 <p className={`text-xs ${textLight}`}>out of {percentileData.totalResponses}</p>
               </div>
               {percentileData.stats && (
                 <>
-                  <div className={`w-px h-10 ${dividerColor}`} />
+                  <div className={`hidden sm:block w-px h-10 ${dividerColor}`} />
                   <div className="text-center">
-                    <p className={`text-lg font-bold ${textColor}`}>{percentileData.stats.averageScore}</p>
+                    <p className={`text-base sm:text-lg font-bold ${textColor}`}>{percentileData.stats.averageScore}</p>
                     <p className={`text-xs ${textLight}`}>avg score</p>
                   </div>
                 </>

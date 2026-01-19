@@ -1,7 +1,7 @@
 # Voice Recording Feature Guide
 
 ## Overview
-The Interview Jury AI app now includes a voice recording feature that simulates a real interview experience. Users can speak their answers naturally, and the app will transcribe them in real-time using the Web Speech API.
+The Sensr AI app now includes a voice recording feature that simulates a real interview experience. Users can speak their answers naturally, and the app will transcribe them in real-time using the Web Speech API.
 
 ## Features
 

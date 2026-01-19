@@ -230,7 +230,7 @@ export function VoiceRecorder({ onTranscriptUpdate, disabled = false }: VoiceRec
           className={`relative w-24 h-24 rounded-full flex items-center justify-center transition-all shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed ${
             isRecording
               ? 'bg-red-500 hover:bg-red-600'
-              : 'gradient-purple hover:shadow-purple-500/50'
+              : 'bg-gradient-to-br from-purple-500 to-pink-500 hover:shadow-purple-500/50'
           }`}
         >
           {/* Pulsing rings when recording */}

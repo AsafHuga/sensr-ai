@@ -16,13 +16,28 @@ import {
   Award,
   Users,
   Keyboard,
-  Mic
+  Mic,
+  MessageSquare,
+  MessageCircle
 } from "lucide-react";
 import { questions, Question } from "@/lib/questions";
 import { JuryVerdict, InterviewerVerdict, FinalDecision } from "@/lib/interviewers/types";
 import { VoiceRecorder } from "@/components/VoiceRecorder";
+import GuidedInterview from "@/components/GuidedInterview";
 
-type InputMode = 'type' | 'record';
+type InputMode = 'type' | 'record' | 'guided';
+
+interface PercentileData {
+  percentile: number;
+  rank: number;
+  totalResponses: number;
+  stats: {
+    totalResponses: number;
+    averageScore: number;
+    highestScore: number;
+    lowestScore: number;
+  } | null;
+}
 
 export default function Home() {
   const [currentQuestion, setCurrentQuestion] = useState<Question>(questions[0]);
@@ -30,7 +45,8 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<JuryVerdict | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [inputMode, setInputMode] = useState<InputMode>('type');
+  const [inputMode, setInputMode] = useState<InputMode>('record');
+  const [percentileData, setPercentileData] = useState<PercentileData | null>(null);
 
   const handleSubmit = async () => {
     if (!answer.trim()) return;
@@ -38,6 +54,7 @@ export default function Home() {
     setIsLoading(true);
     setError(null);
     setResult(null);
+    setPercentileData(null);
 
     try {
       const response = await fetch("/api/evaluate", {
@@ -55,6 +72,25 @@ export default function Home() {
 
       const data: JuryVerdict = await response.json();
       setResult(data);
+
+      // Save score and get percentile data
+      try {
+        const scoresResponse = await fetch("/api/scores", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            questionId: currentQuestion.id,
+            score: data.overallScore,
+          }),
+        });
+
+        if (scoresResponse.ok) {
+          const scoresData = await scoresResponse.json();
+          setPercentileData(scoresData);
+        }
+      } catch (scoreErr) {
+        console.error("Failed to save score:", scoreErr);
+      }
     } catch (err) {
       setError("Failed to evaluate your response. Please try again.");
     } finally {
@@ -68,6 +104,7 @@ export default function Home() {
     setAnswer("");
     setResult(null);
     setError(null);
+    setPercentileData(null);
   };
 
   const handleTranscriptUpdate = (transcript: string) => {
@@ -76,34 +113,32 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
-      {/* Ambient background effects */}
+      {/* Warm ambient background effects */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse-slow" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-20 left-1/4 w-96 h-96 bg-coral/20 rounded-full blur-3xl animate-blob" />
+        <div className="absolute bottom-20 right-1/4 w-96 h-96 bg-lavender/20 rounded-full blur-3xl animate-blob" style={{ animationDelay: '2s' }} />
       </div>
 
       <div className="relative z-10">
-        {/* Premium Header */}
-        <header className="border-b border-white/5 backdrop-blur-xl">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Clean Header */}
+        <header className="border-b border-border/50">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex items-center justify-between">
               <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="flex items-center gap-3"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center gap-2.5"
               >
-                <div className="w-10 h-10 rounded-xl gradient-purple flex items-center justify-center shadow-lg shadow-purple-500/30">
+                <div className="w-9 h-9 rounded-xl gradient-coral flex items-center justify-center">
                   <Sparkles className="w-5 h-5 text-white" />
                 </div>
-                <div>
-                  <h1 className="text-xl font-bold text-white">Interview Jury AI</h1>
-                  <p className="text-xs text-muted-foreground">Premium PM Interview Practice</p>
-                </div>
+                <h1 className="text-xl font-bold text-foreground">Sensr AI</h1>
               </motion.div>
 
               <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
                 className="flex items-center gap-2 text-sm text-muted-foreground"
               >
                 <Users className="w-4 h-4" />
@@ -113,42 +148,136 @@ export default function Home() {
           </div>
         </header>
 
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          {/* Hero Section */}
+        <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          {/* Hero Section - Two column with chat preview */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-16"
+            className="grid lg:grid-cols-2 gap-12 items-center mb-16"
           >
-            <motion.div
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
-            >
-              <h2 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
-                <span className="text-gradient">Ace Your Next</span>
-                <br />
-                <span className="text-white">PM Interview</span>
-              </h2>
-            </motion.div>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-              Get real-time feedback from our AI hiring panel. Practice with realistic questions
-              and receive detailed evaluation from three expert perspectives.
-            </p>
-            <div className="flex items-center justify-center gap-8 text-sm">
-              <div className="flex items-center gap-2">
-                <Target className="w-5 h-5 text-purple-400" />
-                <span className="text-foreground/80">Instant Feedback</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-purple-400" />
-                <span className="text-foreground/80">Score Breakdown</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Award className="w-5 h-5 text-purple-400" />
-                <span className="text-foreground/80">Expert Analysis</span>
-              </div>
+            {/* Left - Text content */}
+            <div className="text-left">
+              {/* Badge */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="inline-flex items-center gap-2 mb-6"
+              >
+                <Sparkles className="w-4 h-4 text-coral" />
+                <span className="text-sm font-medium text-foreground">AI Voice Interview Coach</span>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+              >
+                <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
+                  <span className="text-foreground">Master the</span>
+                  <br />
+                  <span className="text-foreground">Product Sense</span>
+                  <br />
+                  <span className="text-foreground">Interview. </span>
+                  <span className="text-gradient-coral">Out Loud.</span>
+                </h2>
+              </motion.div>
+
+              <motion.p
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="text-base text-muted-foreground mb-8 leading-relaxed"
+              >
+                Stop practicing in your head. Train with an AI interviewer that listens,
+                challenges your frameworks, and grades your execution, just like a real PM interview at Meta or Google.
+              </motion.p>
+
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="flex items-center gap-6 text-sm"
+              >
+                <div className="flex items-center gap-2">
+                  <Target className="w-5 h-5 text-coral" />
+                  <span className="text-foreground/80">Instant Feedback</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-coral" />
+                  <span className="text-foreground/80">Score Breakdown</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Award className="w-5 h-5 text-coral" />
+                  <span className="text-foreground/80">Expert Analysis</span>
+                </div>
+              </motion.div>
             </div>
+
+            {/* Right - Chat preview card */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2 }}
+              className="card-elevated rounded-2xl p-5 shadow-xl"
+            >
+              {/* Window header */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-red-400" />
+                  <div className="w-3 h-3 rounded-full bg-amber-400" />
+                  <div className="w-3 h-3 rounded-full bg-green-400" />
+                </div>
+                <span className="text-xs font-semibold text-lavender uppercase tracking-wider">Live Session</span>
+              </div>
+
+              {/* Chat messages */}
+              <div className="space-y-4 py-4">
+                {/* AI message */}
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                    <MessageSquare className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                  <div className="bg-muted/50 border border-border rounded-2xl rounded-tl-sm px-4 py-3 max-w-[85%]">
+                    <p className="text-sm text-foreground">Design an alarm clock for the blind. Who is the primary persona you'd focus on?</p>
+                  </div>
+                </div>
+
+                {/* User message with waveform */}
+                <div className="flex items-start gap-3 flex-row-reverse">
+                  <span className="text-xs font-semibold text-coral uppercase mt-3">You</span>
+                  <div className="bg-foreground rounded-2xl rounded-tr-sm px-4 py-3">
+                    <div className="flex items-center gap-1">
+                      {[...Array(8)].map((_, i) => (
+                        <div
+                          key={i}
+                          className="w-1 bg-background/60 rounded-full"
+                          style={{ height: `${8 + Math.sin(i * 0.8) * 8 + 4}px` }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* AI follow-up */}
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                    <MessageSquare className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                  <div className="bg-muted/50 border border-border rounded-2xl rounded-tl-sm px-4 py-3 max-w-[85%]">
+                    <p className="text-sm text-foreground">Interesting choice. What are the specific pain points for that persona regarding <em className="text-coral">haptic feedback</em>?</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="flex items-center justify-between pt-4 border-t border-border/50">
+                <div className="w-10 h-10 rounded-full bg-coral/10 flex items-center justify-center">
+                  <Mic className="w-5 h-5 text-coral" />
+                </div>
+                <span className="text-sm text-muted-foreground">Listening...</span>
+                <span className="px-4 py-2 bg-muted rounded-full text-sm font-medium text-foreground">End Session</span>
+              </div>
+            </motion.div>
           </motion.div>
 
           <div className="grid lg:grid-cols-2 gap-8">
@@ -159,26 +288,23 @@ export default function Home() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="glass-strong rounded-2xl p-6 shadow-2xl"
+                className="card-elevated rounded-2xl p-6"
               >
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
-                    <span className="text-sm font-medium text-purple-400">
-                      {currentQuestion.category.replace("_", " ").toUpperCase()}
-                    </span>
-                  </div>
+                <div className="flex items-center justify-between mb-5">
+                  <span className="text-xs font-semibold px-3 py-1.5 rounded-full tag-coral uppercase tracking-wide">
+                    {currentQuestion.category.replace("_", " ")}
+                  </span>
                   <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={handleNewQuestion}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors text-sm font-medium text-foreground/80 hover:text-foreground"
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted transition-all text-sm font-medium text-muted-foreground hover:text-foreground"
                   >
                     <RefreshCw className="w-4 h-4" />
                     New Question
                   </motion.button>
                 </div>
-                <h2 className="text-2xl font-semibold text-white leading-relaxed">
+                <h2 className="text-xl md:text-2xl font-semibold text-foreground leading-relaxed">
                   {currentQuestion.question}
                 </h2>
               </motion.div>
@@ -188,42 +314,53 @@ export default function Home() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="glass-strong rounded-2xl p-6 shadow-2xl"
+                className="card-elevated rounded-2xl p-6"
               >
                 {/* Mode Toggle */}
-                <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center justify-between mb-5">
                   <label className="block text-sm font-semibold text-foreground">
                     Your Answer
                   </label>
-                  <div className="flex items-center gap-2 p-1 rounded-lg bg-white/5 border border-white/10">
-                    <button
-                      onClick={() => setInputMode('type')}
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                        inputMode === 'type'
-                          ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/30'
-                          : 'text-muted-foreground hover:text-foreground'
-                      }`}
-                    >
-                      <Keyboard className="w-4 h-4" />
-                      Type
-                    </button>
+                  <div className="flex items-center gap-1 p-1 rounded-lg bg-muted">
                     <button
                       onClick={() => setInputMode('record')}
                       className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
                         inputMode === 'record'
-                          ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/30'
+                          ? 'bg-foreground text-background shadow-sm'
                           : 'text-muted-foreground hover:text-foreground'
                       }`}
                     >
                       <Mic className="w-4 h-4" />
                       Record
                     </button>
+                    <button
+                      onClick={() => setInputMode('guided')}
+                      className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                        inputMode === 'guided'
+                          ? 'bg-foreground text-background shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      Guided
+                    </button>
+                    <button
+                      onClick={() => setInputMode('type')}
+                      className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                        inputMode === 'type'
+                          ? 'bg-foreground text-background shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      <Keyboard className="w-4 h-4" />
+                      Type
+                    </button>
                   </div>
                 </div>
 
                 {/* Input Area */}
                 <AnimatePresence mode="wait">
-                  {inputMode === 'type' ? (
+                  {inputMode === 'type' && (
                     <motion.div
                       key="type"
                       initial={{ opacity: 0, x: -20 }}
@@ -235,11 +372,12 @@ export default function Home() {
                         value={answer}
                         onChange={(e) => setAnswer(e.target.value)}
                         placeholder="Structure your response clearly. Use examples, data, and demonstrate strategic thinking..."
-                        className="w-full h-72 p-4 bg-white/5 border border-white/10 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-foreground placeholder:text-muted-foreground/50"
+                        className="w-full h-72 p-4 bg-muted/30 border-2 border-border rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-coral focus:border-coral transition-all text-foreground placeholder:text-muted-foreground/60"
                         disabled={isLoading}
                       />
                     </motion.div>
-                  ) : (
+                  )}
+                  {inputMode === 'record' && (
                     <motion.div
                       key="record"
                       initial={{ opacity: 0, x: 20 }}
@@ -253,45 +391,92 @@ export default function Home() {
                       />
                     </motion.div>
                   )}
+                  {inputMode === 'guided' && (
+                    <motion.div
+                      key="guided"
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      transition={{ duration: 0.3 }}
+                      className="min-h-[400px]"
+                    >
+                      <GuidedInterview
+                        question={currentQuestion.question}
+                        onComplete={(fullResponse) => setAnswer(fullResponse)}
+                      />
+                    </motion.div>
+                  )}
                 </AnimatePresence>
 
-                {/* Footer */}
-                <div className="mt-4 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm text-muted-foreground">
-                      {answer.length} characters
-                    </span>
-                    {answer.length > 100 && (
-                      <span className="text-xs px-2 py-1 rounded-full bg-green-500/10 text-green-400 border border-green-500/20">
-                        Good length
+                {/* Footer - Only show for type and record modes */}
+                {inputMode !== 'guided' && (
+                  <div className="mt-5 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm text-muted-foreground">
+                        {answer.length} characters
                       </span>
-                    )}
+                      {answer.length > 100 && (
+                        <span className="text-xs px-2.5 py-1 rounded-full tag-green font-medium">
+                          Good length
+                        </span>
+                      )}
+                    </div>
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={handleSubmit}
+                      disabled={isLoading || !answer.trim()}
+                      className="flex items-center gap-2 px-6 py-3 bg-foreground text-background rounded-full font-semibold shadow-md hover:bg-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm"
+                    >
+                      {isLoading ? (
+                        <>
+                          <motion.div
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                          >
+                            <RefreshCw className="w-4 h-4" />
+                          </motion.div>
+                          Evaluating...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-4 h-4" />
+                          Get Feedback
+                        </>
+                      )}
+                    </motion.button>
                   </div>
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={handleSubmit}
-                    disabled={isLoading || !answer.trim()}
-                    className="flex items-center gap-2 px-6 py-3 gradient-purple rounded-xl font-semibold text-white shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                  >
-                    {isLoading ? (
-                      <>
-                        <motion.div
-                          animate={{ rotate: 360 }}
-                          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                        >
-                          <RefreshCw className="w-4 h-4" />
-                        </motion.div>
-                        Evaluating...
-                      </>
-                    ) : (
-                      <>
-                        <Send className="w-4 h-4" />
-                        Submit for Review
-                      </>
-                    )}
-                  </motion.button>
-                </div>
+                )}
+
+                {/* Submit button for guided mode - only shows when answer is populated */}
+                {inputMode === 'guided' && answer.trim() && (
+                  <div className="mt-5 flex items-center justify-end">
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={handleSubmit}
+                      disabled={isLoading}
+                      className="flex items-center gap-2 px-6 py-3 bg-foreground text-background rounded-full font-semibold shadow-md hover:bg-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm"
+                    >
+                      {isLoading ? (
+                        <>
+                          <motion.div
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                          >
+                            <RefreshCw className="w-4 h-4" />
+                          </motion.div>
+                          Evaluating...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-4 h-4" />
+                          Submit for Evaluation
+                        </>
+                      )}
+                    </motion.button>
+                  </div>
+                )}
               </motion.div>
 
               <AnimatePresence>
@@ -300,11 +485,11 @@ export default function Home() {
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className="glass rounded-xl p-4 border border-red-500/30 bg-red-500/10"
+                    className="card-soft rounded-xl p-4 border border-red-200 bg-red-50"
                   >
                     <div className="flex items-center gap-3">
-                      <XCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
-                      <p className="text-sm text-red-200">{error}</p>
+                      <XCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+                      <p className="text-sm text-red-700">{error}</p>
                     </div>
                   </motion.div>
                 )}
@@ -315,7 +500,7 @@ export default function Home() {
             <div className="space-y-6">
               <AnimatePresence mode="wait">
                 {isLoading && <LoadingState key="loading" />}
-                {result && <ResultsPanel key="results" result={result} />}
+                {result && <ResultsPanel key="results" result={result} percentileData={percentileData} />}
                 {!isLoading && !result && <EmptyState key="empty" />}
               </AnimatePresence>
             </div>
@@ -332,22 +517,22 @@ function LoadingState() {
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      className="glass-strong rounded-2xl p-12 shadow-2xl"
+      className="card-elevated rounded-2xl p-12 shadow-xl"
     >
       <div className="flex flex-col items-center justify-center space-y-8">
         <div className="relative">
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-            className="w-20 h-20 rounded-full border-4 border-purple-500/20 border-t-purple-500"
+            className="w-20 h-20 rounded-full border-4 border-coral/20 border-t-coral"
           />
           <div className="absolute inset-0 flex items-center justify-center">
-            <Users className="w-8 h-8 text-purple-400" />
+            <Users className="w-8 h-8 text-coral" />
           </div>
         </div>
 
         <div className="text-center space-y-3">
-          <h3 className="text-xl font-semibold text-white">Jury Deliberating</h3>
+          <h3 className="text-xl font-semibold text-foreground">Jury Deliberating</h3>
           <p className="text-sm text-muted-foreground">Our panel of experts is evaluating your response...</p>
         </div>
 
@@ -362,9 +547,9 @@ function LoadingState() {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: interviewer.delay }}
-              className="flex items-center gap-3 p-3 rounded-xl bg-white/5"
+              className="flex items-center gap-3 p-3 rounded-xl bg-muted/50"
             >
-              <div className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
+              <div className="w-2 h-2 rounded-full bg-coral animate-pulse" />
               <div>
                 <p className="text-sm font-medium text-foreground">{interviewer.name}</p>
                 <p className="text-xs text-muted-foreground">{interviewer.role}</p>
@@ -382,19 +567,19 @@ function EmptyState() {
     {
       name: "Sarah Chen",
       role: "VP Product",
-      gradient: "gradient-purple",
+      gradient: "gradient-coral",
       initials: "SC"
     },
     {
       name: "Marcus Rodriguez",
       role: "Bar Raiser",
-      gradient: "gradient-blue",
+      gradient: "gradient-lavender",
       initials: "MR"
     },
     {
       name: "Jamie Park",
       role: "Recruiter",
-      gradient: "gradient-green",
+      gradient: "gradient-success",
       initials: "JP"
     }
   ];
@@ -404,18 +589,18 @@ function EmptyState() {
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      className="glass-strong rounded-2xl p-12 shadow-2xl"
+      className="card-elevated rounded-2xl p-12 shadow-xl"
     >
       <div className="text-center space-y-8">
         <motion.div
           animate={{ y: [0, -10, 0] }}
           transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
         >
-          <Sparkles className="w-16 h-16 mx-auto text-purple-400" />
+          <Sparkles className="w-16 h-16 mx-auto text-coral" />
         </motion.div>
 
         <div className="space-y-3">
-          <h3 className="text-2xl font-bold text-white">Meet Your Interview Panel</h3>
+          <h3 className="text-2xl font-bold text-foreground">Meet Your Interview Panel</h3>
           <p className="text-muted-foreground max-w-md mx-auto">
             Three expert AI interviewers ready to provide comprehensive feedback on your response
           </p>
@@ -441,7 +626,7 @@ function EmptyState() {
           ))}
         </div>
 
-        <div className="pt-6 border-t border-white/5">
+        <div className="pt-6 border-t border-border/50">
           <p className="text-sm text-muted-foreground">
             Submit your answer to receive detailed feedback and scores
           </p>
@@ -451,7 +636,7 @@ function EmptyState() {
   );
 }
 
-function ResultsPanel({ result }: { result: JuryVerdict }) {
+function ResultsPanel({ result, percentileData }: { result: JuryVerdict; percentileData: PercentileData | null }) {
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -459,7 +644,7 @@ function ResultsPanel({ result }: { result: JuryVerdict }) {
       className="space-y-6"
     >
       {/* Final Verdict */}
-      <FinalVerdictCard decision={result.finalDecision} score={result.overallScore} />
+      <FinalVerdictCard decision={result.finalDecision} score={result.overallScore} percentileData={percentileData} />
 
       {/* Strengths & Red Flags */}
       <div className="grid grid-cols-2 gap-4">
@@ -467,11 +652,11 @@ function ResultsPanel({ result }: { result: JuryVerdict }) {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.1 }}
-          className="glass rounded-xl p-5 border border-green-500/20 bg-green-500/5"
+          className="card-soft rounded-xl p-5 border border-green-200 bg-green-50"
         >
           <div className="flex items-center gap-2 mb-4">
-            <CheckCircle2 className="w-5 h-5 text-green-400" />
-            <h4 className="font-semibold text-green-300">Strengths</h4>
+            <CheckCircle2 className="w-5 h-5 text-green-600" />
+            <h4 className="font-semibold text-green-700">Strengths</h4>
           </div>
           <ul className="space-y-2">
             {result.strengths.length > 0 ? (
@@ -481,14 +666,14 @@ function ResultsPanel({ result }: { result: JuryVerdict }) {
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.1 + i * 0.05 }}
-                  className="text-sm text-green-200/90 flex items-start gap-2"
+                  className="text-sm text-green-800 flex items-start gap-2"
                 >
-                  <span className="text-green-400 mt-0.5">•</span>
+                  <span className="text-green-500 mt-0.5">•</span>
                   <span>{s}</span>
                 </motion.li>
               ))
             ) : (
-              <li className="text-sm text-green-300/50 italic">No strong positives identified</li>
+              <li className="text-sm text-green-600/60 italic">No strong positives identified</li>
             )}
           </ul>
         </motion.div>
@@ -497,11 +682,11 @@ function ResultsPanel({ result }: { result: JuryVerdict }) {
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.1 }}
-          className="glass rounded-xl p-5 border border-red-500/20 bg-red-500/5"
+          className="card-soft rounded-xl p-5 border border-red-200 bg-red-50"
         >
           <div className="flex items-center gap-2 mb-4">
-            <AlertCircle className="w-5 h-5 text-red-400" />
-            <h4 className="font-semibold text-red-300">Red Flags</h4>
+            <AlertCircle className="w-5 h-5 text-red-500" />
+            <h4 className="font-semibold text-red-700">Red Flags</h4>
           </div>
           <ul className="space-y-2">
             {result.redFlags.length > 0 ? (
@@ -511,14 +696,14 @@ function ResultsPanel({ result }: { result: JuryVerdict }) {
                   initial={{ opacity: 0, x: 10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.1 + i * 0.05 }}
-                  className="text-sm text-red-200/90 flex items-start gap-2"
+                  className="text-sm text-red-800 flex items-start gap-2"
                 >
-                  <span className="text-red-400 mt-0.5">•</span>
+                  <span className="text-red-500 mt-0.5">•</span>
                   <span>{f}</span>
                 </motion.li>
               ))
             ) : (
-              <li className="text-sm text-red-300/50 italic">No red flags identified</li>
+              <li className="text-sm text-red-600/60 italic">No red flags identified</li>
             )}
           </ul>
         </motion.div>
@@ -529,10 +714,10 @@ function ResultsPanel({ result }: { result: JuryVerdict }) {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="glass-strong rounded-xl p-6 shadow-lg"
+        className="card-elevated rounded-xl p-6 shadow-md"
       >
-        <h4 className="font-semibold text-white mb-5 flex items-center gap-2">
-          <TrendingUp className="w-5 h-5 text-purple-400" />
+        <h4 className="font-semibold text-foreground mb-5 flex items-center gap-2">
+          <TrendingUp className="w-5 h-5 text-coral" />
           Score Breakdown
         </h4>
         <div className="space-y-4">
@@ -545,14 +730,14 @@ function ResultsPanel({ result }: { result: JuryVerdict }) {
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium text-foreground">{item.dimension}</span>
-                <span className="text-sm font-bold text-purple-400">{item.score}%</span>
+                <span className="text-sm font-bold text-coral">{item.score}%</span>
               </div>
-              <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+              <div className="h-2 bg-muted rounded-full overflow-hidden">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${item.score}%` }}
                   transition={{ duration: 1, delay: 0.3 + i * 0.05, ease: "easeOut" }}
-                  className="h-full gradient-purple"
+                  className="h-full gradient-coral"
                 />
               </div>
             </motion.div>
@@ -568,21 +753,21 @@ function ResultsPanel({ result }: { result: JuryVerdict }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ delay: 0.3 }}
-            className="glass rounded-xl p-5 border border-amber-500/20 bg-amber-500/5"
+            className="card-soft rounded-xl p-5 border border-amber-200 bg-amber-50"
           >
             <div className="flex items-center gap-2 mb-4">
-              <AlertCircle className="w-5 h-5 text-amber-400" />
-              <h4 className="font-semibold text-amber-300">Panel Disagreements</h4>
+              <AlertCircle className="w-5 h-5 text-amber-600" />
+              <h4 className="font-semibold text-amber-700">Panel Disagreements</h4>
             </div>
             <div className="space-y-3">
               {result.disagreements.map((d, i) => (
-                <div key={i} className="p-3 rounded-lg bg-white/5">
-                  <p className="text-sm font-medium text-amber-200 mb-2">{d.topic}</p>
+                <div key={i} className="p-3 rounded-lg bg-amber-100/50">
+                  <p className="text-sm font-medium text-amber-800 mb-2">{d.topic}</p>
                   <div className="flex flex-wrap gap-2">
                     {d.positions.map((p, j) => (
                       <span
                         key={j}
-                        className="text-xs px-2 py-1 rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/20"
+                        className="text-xs px-2 py-1 rounded-md bg-amber-100 text-amber-700 border border-amber-200"
                       >
                         {p.interviewer}: {p.stance}
                       </span>
@@ -602,8 +787,8 @@ function ResultsPanel({ result }: { result: JuryVerdict }) {
         transition={{ delay: 0.4 }}
         className="space-y-4"
       >
-        <h4 className="font-semibold text-white flex items-center gap-2">
-          <Users className="w-5 h-5 text-purple-400" />
+        <h4 className="font-semibold text-foreground flex items-center gap-2">
+          <Users className="w-5 h-5 text-coral" />
           Individual Evaluations
         </h4>
         {result.interviewerVerdicts.map((verdict, i) => (
@@ -614,32 +799,47 @@ function ResultsPanel({ result }: { result: JuryVerdict }) {
   );
 }
 
-function FinalVerdictCard({ decision, score }: { decision: FinalDecision; score: number }) {
+function FinalVerdictCard({ decision, score, percentileData }: { decision: FinalDecision; score: number; percentileData: PercentileData | null }) {
   const config = {
     PASS: {
       gradient: "gradient-green",
       icon: CheckCircle2,
       label: "STRONG HIRE",
       glow: "glow-green",
-      borderColor: "border-green-500/30"
+      borderColor: "border-green-500/30",
+      textColor: "text-green-900",
+      textMuted: "text-green-800/70",
+      textLight: "text-green-800/50",
+      dividerColor: "bg-green-800/20",
+      badgeBg: "bg-green-800/10"
     },
     BORDERLINE: {
-      gradient: "gradient-amber",
+      gradient: "gradient-coral",
       icon: AlertCircle,
       label: "BORDERLINE",
-      glow: "glow-amber",
-      borderColor: "border-amber-500/30"
+      glow: "glow-coral",
+      borderColor: "border-orange-400/30",
+      textColor: "text-orange-950",
+      textMuted: "text-orange-900/70",
+      textLight: "text-orange-900/50",
+      dividerColor: "bg-orange-900/20",
+      badgeBg: "bg-orange-900/10"
     },
     FAIL: {
       gradient: "gradient-red",
       icon: XCircle,
       label: "NO HIRE",
       glow: "glow-red",
-      borderColor: "border-red-500/30"
+      borderColor: "border-red-500/30",
+      textColor: "text-red-950",
+      textMuted: "text-red-900/70",
+      textLight: "text-red-900/50",
+      dividerColor: "bg-red-900/20",
+      badgeBg: "bg-red-900/10"
     },
   };
 
-  const { gradient, icon: Icon, label, glow, borderColor } = config[decision];
+  const { gradient, icon: Icon, label, glow, borderColor, textColor, textMuted, textLight, dividerColor, badgeBg } = config[decision];
 
   return (
     <motion.div
@@ -647,21 +847,21 @@ function FinalVerdictCard({ decision, score }: { decision: FinalDecision; score:
       animate={{ opacity: 1, scale: 1, y: 0 }}
       className={`${gradient} rounded-2xl p-8 text-center relative overflow-hidden shadow-2xl ${glow} border ${borderColor}`}
     >
-      <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent" />
       <div className="relative z-10">
         <motion.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ delay: 0.2, type: "spring" }}
         >
-          <Icon className="w-12 h-12 mx-auto mb-4 text-white" />
+          <Icon className={`w-12 h-12 mx-auto mb-4 ${textColor}`} />
         </motion.div>
-        <p className="text-sm text-white/80 mb-2 font-medium uppercase tracking-wide">Final Verdict</p>
+        <p className={`text-sm ${textMuted} mb-2 font-medium uppercase tracking-wide`}>Final Verdict</p>
         <motion.h2
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="text-4xl font-bold text-white mb-4"
+          className={`text-4xl font-bold ${textColor} mb-4`}
         >
           {label}
         </motion.h2>
@@ -669,11 +869,45 @@ function FinalVerdictCard({ decision, score }: { decision: FinalDecision; score:
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm"
+          className={`inline-flex items-center gap-2 px-4 py-2 rounded-full ${badgeBg} backdrop-blur-sm`}
         >
-          <span className="text-2xl font-bold text-white">{score}</span>
-          <span className="text-sm text-white/80">/ 100</span>
+          <span className={`text-2xl font-bold ${textColor}`}>{score}</span>
+          <span className={`text-sm ${textMuted}`}>/ 100</span>
         </motion.div>
+
+        {/* Percentile Ranking */}
+        {percentileData && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className={`mt-6 pt-6 border-t ${dividerColor}`}
+          >
+            <div className="flex items-center justify-center gap-6">
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-1 mb-1">
+                  <Award className={`w-5 h-5 ${textMuted}`} />
+                  <span className={`text-2xl font-bold ${textColor}`}>Top {percentileData.percentile}%</span>
+                </div>
+                <p className={`text-xs ${textLight}`}>of all responses</p>
+              </div>
+              <div className={`w-px h-10 ${dividerColor}`} />
+              <div className="text-center">
+                <p className={`text-lg font-bold ${textColor}`}>#{percentileData.rank}</p>
+                <p className={`text-xs ${textLight}`}>out of {percentileData.totalResponses}</p>
+              </div>
+              {percentileData.stats && (
+                <>
+                  <div className={`w-px h-10 ${dividerColor}`} />
+                  <div className="text-center">
+                    <p className={`text-lg font-bold ${textColor}`}>{percentileData.stats.averageScore}</p>
+                    <p className={`text-xs ${textLight}`}>avg score</p>
+                  </div>
+                </>
+              )}
+            </div>
+          </motion.div>
+        )}
       </div>
     </motion.div>
   );
@@ -684,33 +918,33 @@ function InterviewerCard({ verdict, delay }: { verdict: InterviewerVerdict; dela
 
   const verdictConfig = {
     strong_pass: {
-      bg: "bg-green-500/10",
-      text: "text-green-300",
-      border: "border-green-500/30",
+      bg: "bg-green-100",
+      text: "text-green-700",
+      border: "border-green-200",
       label: "Strong Pass"
     },
     pass: {
-      bg: "bg-green-500/5",
-      text: "text-green-400",
-      border: "border-green-500/20",
+      bg: "bg-green-50",
+      text: "text-green-600",
+      border: "border-green-100",
       label: "Pass"
     },
     borderline: {
-      bg: "bg-amber-500/10",
-      text: "text-amber-300",
-      border: "border-amber-500/30",
+      bg: "bg-amber-100",
+      text: "text-amber-700",
+      border: "border-amber-200",
       label: "Borderline"
     },
     fail: {
-      bg: "bg-red-500/5",
-      text: "text-red-400",
-      border: "border-red-500/20",
+      bg: "bg-red-50",
+      text: "text-red-600",
+      border: "border-red-100",
       label: "Fail"
     },
     strong_fail: {
-      bg: "bg-red-500/10",
-      text: "text-red-300",
-      border: "border-red-500/30",
+      bg: "bg-red-100",
+      text: "text-red-700",
+      border: "border-red-200",
       label: "Strong Fail"
     },
   };
@@ -721,19 +955,19 @@ function InterviewerCard({ verdict, delay }: { verdict: InterviewerVerdict; dela
     hiring_manager: {
       name: "Sarah Chen",
       title: "VP of Product",
-      gradient: "gradient-purple",
+      gradient: "gradient-coral",
       initials: "SC"
     },
     senior_pm: {
       name: "Marcus Rodriguez",
       title: "Principal PM (Bar Raiser)",
-      gradient: "gradient-blue",
+      gradient: "gradient-lavender",
       initials: "MR"
     },
     recruiter: {
       name: "Jamie Park",
       title: "Senior Recruiter",
-      gradient: "gradient-green",
+      gradient: "gradient-success",
       initials: "JP"
     },
   };
@@ -745,16 +979,16 @@ function InterviewerCard({ verdict, delay }: { verdict: InterviewerVerdict; dela
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay }}
-      className="glass-strong rounded-xl overflow-hidden shadow-lg border border-white/5"
+      className="card-elevated rounded-xl overflow-hidden shadow-md"
     >
       <motion.div
-        whileHover={{ backgroundColor: "rgba(255, 255, 255, 0.03)" }}
+        whileHover={{ backgroundColor: "rgba(0, 0, 0, 0.02)" }}
         className="p-5 cursor-pointer transition-colors"
         onClick={() => setExpanded(!expanded)}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className={`w-12 h-12 ${info.gradient} rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-lg`}>
+            <div className={`w-12 h-12 ${info.gradient} rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-md`}>
               {info.initials}
             </div>
             <div>
@@ -785,8 +1019,8 @@ function InterviewerCard({ verdict, delay }: { verdict: InterviewerVerdict; dela
             transition={{ duration: 0.3 }}
             className="overflow-hidden"
           >
-            <div className="px-5 pb-5 border-t border-white/5 pt-5 space-y-5">
-              <div className="p-4 rounded-lg bg-white/5">
+            <div className="px-5 pb-5 border-t border-border/50 pt-5 space-y-5">
+              <div className="p-4 rounded-lg bg-muted/50">
                 <p className="text-sm text-foreground/90 leading-relaxed">
                   {verdict.rawFeedback}
                 </p>
@@ -800,7 +1034,7 @@ function InterviewerCard({ verdict, delay }: { verdict: InterviewerVerdict; dela
                       <span className="text-xs font-medium text-muted-foreground">
                         {score.dimension}
                       </span>
-                      <span className="text-xs font-bold text-purple-400">
+                      <span className="text-xs font-bold text-coral">
                         {score.score}/5
                       </span>
                     </div>
@@ -813,8 +1047,8 @@ function InterviewerCard({ verdict, delay }: { verdict: InterviewerVerdict; dela
                           transition={{ delay: 0.05 * n }}
                           className={`h-1.5 flex-1 rounded-full ${
                             n <= score.score
-                              ? "bg-purple-500"
-                              : "bg-white/10"
+                              ? "bg-coral"
+                              : "bg-muted"
                           }`}
                         />
                       ))}

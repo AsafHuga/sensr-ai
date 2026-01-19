@@ -33,6 +33,16 @@ const config: Config = {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
         },
+        success: "hsl(var(--success))",
+        warning: "hsl(var(--warning))",
+        error: "hsl(var(--error))",
+        coral: "#FF9E8F",
+        lavender: "#C7B8FF",
+        cream: "#FDF7EF",
+      },
+      borderRadius: {
+        '2xl': '1rem',
+        '3xl': '1.5rem',
       },
       animation: {
         "spin-slow": "spin 3s linear infinite",

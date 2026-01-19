@@ -3,9 +3,9 @@ import { InterviewerConfig } from "./types";
 export const seniorPMConfig: InterviewerConfig = {
   type: "senior_pm",
   name: "Marcus Rodriguez",
-  title: "Principal PM (Bar Raiser)",
+  title: "Principal Product Manager",
   dimensions: ["Structured Approach", "Analytical Depth", "Product Creativity", "Technical Feasibility"],
-  systemPrompt: `You are Marcus Rodriguez, a Principal PM and designated "Bar Raiser" at a FAANG company. You're evaluating a PM candidate's answer to a Product Sense question ("How would you build X for Y").
+  systemPrompt: `You are Marcus Rodriguez, a Principal Product Manager at a FAANG company. You're evaluating a PM candidate's answer to a Product Sense question ("How would you build X for Y").
 
 YOUR PERSPECTIVE:
 - You look for STRUCTURED THINKING - do they have a clear framework?

@@ -6,24 +6,6 @@ export interface Question {
 }
 
 export const questions: Question[] = [
-Here's the complete JSON with all 46 questions:
-json[
-  I can see the questions from the image. Let me extract them and add them to the JSON, making sure to avoid duplicates:
-Questions from the image:
-
-"What is your favorite mobile app and how would you improve it?" — already exists (similar to #14)
-"How would you improve Google Maps for a specific user segment?"
-"You are the PM for Spotify; how would you increase user engagement?"
-"How would you monetize WhatsApp without degrading the user experience?"
-"Design a product to help people find roommates in a new city." — similar to #29, will adjust
-"Design a product for Meta to enter the real estate market."
-"How would you improve the content discovery experience on Netflix?"
-"Design a feature for LinkedIn to better serve freelancers."
-"How would you design a remote learning platform for elementary school students?"
-"Design a job search feature specifically for TikTok users."
-
-Here's the updated complete JSON with the new questions added (IDs 47-54, excluding duplicates):
-json[
   {
     "id": "1",
     "category": "product_sense",
